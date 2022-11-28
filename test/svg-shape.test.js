@@ -1,13 +1,14 @@
 'use strict';
 
-const { Buffer } = require('buffer');
-const path = require('path');
-const fs = require('fs');
+const { Buffer } = require('node:buffer');
+const path = require('node:path');
+const fs = require('node:fs');
 const File = require('vinyl');
 const glob = require('glob');
 const getShape = require('../lib/svg-sprite/shape.js');
 const SVGSpriter = require('../lib/svg-sprite.js');
 const fixXMLString = require('../lib/svg-sprite/utils/fix-xml-string.js');
+const ArgumentError = require('../lib/svg-sprite/errors/argument-error.js');
 
 jest.mock('../lib/svg-sprite/utils/fix-xml-string.js', () => jest.fn());
 
@@ -39,7 +40,7 @@ describe('testing SVGShape initialization', () => {
                 }),
                 spriter
             );
-        }).not.toThrow(Error);
+        }).not.toThrow(ArgumentError);
         expect(fixXMLString).toHaveBeenCalledWith(TEST_SVG);
     });
 
@@ -58,7 +59,7 @@ describe('testing SVGShape initialization', () => {
                 }),
                 spriter
             );
-        }).toThrow(new Error('Invalid SVG file'));
+        }).toThrow(new ArgumentError('Invalid SVG file'));
         expect(fixXMLString).toHaveBeenCalledWith(TEST_SVG);
     });
 
@@ -75,20 +76,20 @@ describe('testing SVGShape initialization', () => {
                 }),
                 spriter
             );
-        }).toThrow(Error);
+        }).toThrow(ArgumentError);
         expect(fixXMLString).toHaveBeenCalledWith(TEST_NON_SVG);
     });
 
     it('should not throw an error and should not call fixXMLString on actual valid svg files', () => {
         expect.hasAssertions();
 
-        const cwdWeather = path.join(__dirname, 'fixture/svg/single');
-        const weather = glob.sync('**/weather*.svg', { cwd: cwdWeather });
+        const cwd = path.join(__dirname, 'fixture/svg/single');
+        const weatherFiles = glob.sync('**/weather*.svg', { cwd });
 
-        expect.assertions(weather.length * 2);
+        expect.assertions(weatherFiles.length * 2);
 
-        weather.forEach(weatherFile => {
-            const svgFileBuffer = fs.readFileSync(path.join(cwdWeather, weatherFile));
+        for (const weatherFile of weatherFiles) {
+            const svgFileBuffer = fs.readFileSync(path.join(cwd, weatherFile));
 
             expect(() => {
                 getShape(
@@ -98,8 +99,8 @@ describe('testing SVGShape initialization', () => {
                     }),
                     spriter
                 );
-            }).not.toThrow(Error);
+            }).not.toThrow(ArgumentError);
             expect(fixXMLString).not.toHaveBeenCalled();
-        });
+        }
     });
 });

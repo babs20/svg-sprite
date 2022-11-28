@@ -1,5 +1,8 @@
 'use strict';
 
+const { Buffer } = require('node:buffer');
+const File = require('vinyl');
+
 const TEST_SPRITER = {
     config: {
         shape: {
@@ -12,11 +15,12 @@ const TEST_SPRITER = {
     },
     verbose: jest.fn()
 };
-const TEST_FILE = {
-    contents: '<svg></svg>',
-    path: 'test_path',
-    relative: 'test_relative'
-};
+const TEST_FILE = new File({
+    contents: Buffer.from('<svg></svg>'),
+    path: '/test_base/test_path',
+    base: '/test_base/',
+    cwd: '/'
+});
 
 const { XMLSerializer } = require('@xmldom/xmldom');
 const SVGShape = require('../../../lib/svg-sprite/shape.js');
@@ -123,31 +127,29 @@ describe('testing getSVG()', () => {
     it('should substitute ID references in href attributes', () => {
         expect.hasAssertions();
 
-        const shape = new SVGShape(
-            {
-                ...TEST_FILE,
-                contents:
-                    '<svg xmlns="http://www.w3.org/2000/svg" id="abc" height="0" width="0"><use href="#abc"/></svg>'
-            },
-            {
-                config: {
-                    shape: {
-                        meta: {},
-                        align: {}
-                    },
-                    svg: {
-                        doctypeDeclaration: '',
-                        namespaceIDPrefix: 'someprefix-',
-                        namespaceClassnames: false,
-                        namespaceIDs: true
-                    },
-                    mode: {
-                        view: true
-                    }
+        const shape = new SVGShape(new File({
+            base: TEST_FILE.base,
+            path: TEST_FILE.path,
+            cwd: TEST_FILE.cwd,
+            contents: Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" id="abc" height="0" width="0"><use href="#abc"/></svg>')
+        }), {
+            config: {
+                shape: {
+                    meta: {},
+                    align: {}
                 },
-                verbose: jest.fn()
-            }
-        );
+                svg: {
+                    doctypeDeclaration: '',
+                    namespaceIDPrefix: 'someprefix-',
+                    namespaceClassnames: false,
+                    namespaceIDs: true
+                },
+                mode: {
+                    view: true
+                }
+            },
+            verbose: jest.fn()
+        });
         shape.complement(jest.fn);
         shape.setNamespace('ns-');
 
@@ -159,31 +161,29 @@ describe('testing getSVG()', () => {
     it('should substitute ID references in xlink:href attributes', () => {
         expect.hasAssertions();
 
-        const shape = new SVGShape(
-            {
-                ...TEST_FILE,
-                contents:
-                    '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="abc" height="0" width="0"><use xlink:href="#abc"/></svg>'
-            },
-            {
-                config: {
-                    shape: {
-                        meta: {},
-                        align: {}
-                    },
-                    svg: {
-                        doctypeDeclaration: '',
-                        namespaceIDPrefix: 'someprefix-',
-                        namespaceClassnames: false,
-                        namespaceIDs: true
-                    },
-                    mode: {
-                        view: true
-                    }
+        const shape = new SVGShape(new File({
+            base: TEST_FILE.base,
+            path: TEST_FILE.path,
+            cwd: TEST_FILE.cwd,
+            contents: Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="abc" height="0" width="0"><use xlink:href="#abc"/></svg>')
+        }), {
+            config: {
+                shape: {
+                    meta: {},
+                    align: {}
                 },
-                verbose: jest.fn()
-            }
-        );
+                svg: {
+                    doctypeDeclaration: '',
+                    namespaceIDPrefix: 'someprefix-',
+                    namespaceClassnames: false,
+                    namespaceIDs: true
+                },
+                mode: {
+                    view: true
+                }
+            },
+            verbose: jest.fn()
+        });
         shape.complement(jest.fn);
         shape.setNamespace('ns-');
 

@@ -14,8 +14,8 @@
 /**
  * Module dependencies.
  */
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 const merge = require('lodash.merge');
 const File = require('vinyl');
 const yaml = require('js-yaml');
@@ -75,8 +75,8 @@ function addOption(name, option) {
     }
 
     const { description, alias: optAlias, default: optDefault, map, ...children } = option;
-    for (const sub in children) {
-        addOption(`${name}-${sub}`, children[sub]);
+    for (const [key, value] of Object.entries(children)) {
+        addOption(`${name}-${key}`, value);
     }
 }
 
@@ -108,17 +108,18 @@ function addConfigMap(store, path, value) {
  */
 function writeFiles(files) {
     let written = 0;
-    for (const key in files) {
-        const file = files[key];
 
-        if (isObject(file)) {
-            if (file.constructor === File) {
-                fs.mkdirSync(path.dirname(file.path), { recursive: true });
-                fs.writeFileSync(file.path, file.contents);
-                ++written;
-            } else {
-                written += writeFiles(file);
-            }
+    for (const file of Object.values(files)) {
+        if (!isObject(file)) {
+            continue;
+        }
+
+        if (file.constructor === File) {
+            fs.mkdirSync(path.dirname(file.path), { recursive: true });
+            fs.writeFileSync(file.path, file.contents);
+            ++written;
+        } else {
+            written += writeFiles(file);
         }
     }
 
@@ -128,8 +129,8 @@ function writeFiles(files) {
 // Get document, or throw exception on error
 try {
     const options = yaml.load(fs.readFileSync(path.resolve(__dirname, 'config.yaml'), 'utf8'));
-    for (const name in options) {
-        addOption(name, options[name]);
+    for (const [key, value] of Object.entries(options)) {
+        addOption(key, value);
     }
 } catch (error) {
     console.log(error);
@@ -138,12 +139,12 @@ try {
 const { argv } = yargs;
 
 // Map all arguments to a global configuration object
-for (const map in optionsMap) {
-    if (!(optionsMap[map] in argv)) {
+for (const [key, value] of Object.entries(optionsMap)) {
+    if (!(value in argv)) {
         continue;
     }
 
-    addConfigMap(config, map.split('.'), argv[optionsMap[map]]);
+    addConfigMap(config, key.split('.'), argv[value]);
 }
 
 // Load external JSON config file
@@ -203,7 +204,8 @@ if (typeof config.shape.transform === 'string') {
     const transform = String(config.shape.transform).trim();
     config.shape.transform = [];
     (transform.length ? transform.split(',').map(trans => String(trans).trim()) : [])
-        .forEach(function(transform) {
+        // TODO
+        .forEach(function(transform) { // eslint-disable-line unicorn/no-array-for-each
             if (transform.length) {
                 if (`shape-transform-${transform}` in argv) {
                     try {
@@ -220,6 +222,8 @@ if (typeof config.shape.transform === 'string') {
 }
 
 // Run through all sprite modes
+// TODO
+// eslint-disable-next-line unicorn/no-array-for-each
 ['css', 'view', 'defs', 'symbol', 'stack'].forEach(function(mode) {
     if (!argv[mode] && !(mode in JSONConfig.mode)) {
         delete this[mode];
@@ -227,6 +231,8 @@ if (typeof config.shape.transform === 'string') {
     }
 
     // Remove excessive render types
+    // TODO
+    // eslint-disable-next-line unicorn/no-array-for-each
     ['css', 'scss', 'less', 'styl'].forEach(function(render) {
         const arg = `${mode}-render-${render}`;
         if (render in this && !argv[arg] && (!(mode in JSONConfig.mode) || !('render' in JSONConfig.mode[mode]) || !(render in JSONConfig.mode[mode].render))) {
@@ -240,7 +246,7 @@ if (typeof config.shape.transform === 'string') {
 }, config.mode);
 
 // Remove excessive example options
-for (const mode in config.mode) {
+for (const mode of Object.keys(config.mode)) {
     const example = `${mode}-example`;
     if (!argv[example] && (!(mode in JSONConfig.mode) || !('example' in JSONConfig.mode[mode])) && 'example' in config.mode[mode]) {
         delete config.mode[mode].example;
@@ -262,22 +268,23 @@ if ('variables' in config) {
 }
 
 const spriter = new SVGSpriter(config);
+const files = argv._.reduce((f, g) => [...f, ...glob.sync(g)], []);
 
-argv._.reduce((f, g) => [...f, ...glob.sync(g)], [])
-    .forEach(file => {
-        let basename = file;
-        file = path.resolve(file);
-        const stat = fs.lstatSync(file);
-        if (stat.isSymbolicLink()) {
-            file = fs.readlinkSync(file);
-            basename = path.basename(file);
-        } else {
-            const basepos = basename.lastIndexOf('./');
-            basename = basepos >= 0 ? basename.substr(basepos + 2) : path.basename(file);
-        }
+for (let file of files) {
+    let basename = file;
+    file = path.resolve(file); // TODO: get rid of variable redefinition
+    const stat = fs.lstatSync(file);
 
-        spriter.add(file, basename, fs.readFileSync(file));
-    });
+    if (stat.isSymbolicLink()) {
+        file = fs.readlinkSync(file);
+        basename = path.basename(file);
+    } else {
+        const basepos = basename.lastIndexOf('./');
+        basename = basepos >= 0 ? basename.substr(basepos + 2) : path.basename(file);
+    }
+
+    spriter.add(file, basename, fs.readFileSync(file));
+}
 
 spriter.compile((error, result) => {
     if (error) {

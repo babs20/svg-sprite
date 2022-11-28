@@ -1,7 +1,10 @@
 'use strict';
 
+const { Buffer } = require('node:buffer');
 const xpath = require('xpath');
+const File = require('vinyl');
 const SVGShape = require('../../../lib/svg-sprite/shape.js');
+const NotPermittedError = require('../../../lib/svg-sprite/errors/not-permitted-error.js');
 
 const TEST_SPRITER = {
     config: {
@@ -15,11 +18,12 @@ const TEST_SPRITER = {
     },
     verbose: jest.fn()
 };
-const TEST_FILE = {
-    contents: '<svg></svg>',
-    path: 'test_path',
-    relative: 'test_relative'
-};
+const TEST_FILE = new File({
+    contents: Buffer.from('<svg></svg>'),
+    path: '/test_base/test_path',
+    base: '/test_base/',
+    cwd: '/'
+});
 jest.mock('xpath');
 jest.mock('csso', () => {
     return {
@@ -53,7 +57,7 @@ describe('testing setNamespace()', () => {
 
         expect(() => {
             shape.setNamespace({});
-        }).toThrow(new Error('Shape namespace cannot be set before complementing'));
+        }).toThrow(new NotPermittedError('Shape namespace cannot be set before complementing'));
     });
 
     describe('if namespaceIds', () => {
@@ -131,7 +135,7 @@ describe('testing setNamespace()', () => {
             expect(mockSelect.mock.calls[1][0]).toBe('//@xlink:href');
             expect(mockSelect.mock.calls[2][0]).toBe('//@href');
 
-            [
+            const attributes = [
                 'style',
                 'fill',
                 'stroke',
@@ -141,9 +145,11 @@ describe('testing setNamespace()', () => {
                 'marker-start',
                 'marker-end',
                 'marker-mid'
-            ].forEach((ref, i) => {
+            ];
+
+            for (const [i, ref] of attributes.entries()) {
                 expect(mockSelect.mock.calls[3 + i][0]).toBe(`//@${ref}`);
-            });
+            }
 
             expect(mockSelect.mock.calls[12][0]).toBe('//svg:style');
             expect(mockSelect.mock.calls[13][0]).toBe('//svg:style');
@@ -276,7 +282,7 @@ describe('testing resetNamespace()', () => {
         const shape = new SVGShape(TEST_FILE, TEST_SPRITER);
         shape.spriter.config.svg.namespaceIDs = true;
         shape._namespaced = true;
-        shape.svg.ready = TEST_FILE.contents;
+        shape.svg.ready = TEST_FILE.contents.toString();
         shape.resetNamespace();
 
         expect(shape._namespaced).toBe(false);

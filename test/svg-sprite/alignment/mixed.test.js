@@ -1,7 +1,7 @@
 'use strict';
 
-const path = require('path');
-const fs = require('fs');
+const path = require('node:path');
+const fs = require('node:fs');
 const mustache = require('mustache');
 const sass = require('sass');
 const glob = require('glob');
@@ -61,6 +61,7 @@ describe(`svg-sprite: with mixed alignment and ${align.length} SVG files`, () =>
             const input = path.join(tmpPath, 'view/svg', svgPath);
             const expected = path.join(paths.expectations, 'png/css.vertical.mixed.png');
 
+            expect(fs.readFileSync(input).toString()).toMatchSnapshot();
             await expect(input).toBeVisuallyEqualTo(expected);
         });
 
@@ -121,6 +122,7 @@ describe(`svg-sprite: with mixed alignment and ${align.length} SVG files`, () =>
             const input = path.join(tmpPath, 'view/svg', svgPath);
             const expected = path.join(paths.expectations, 'png/css.horizontal.mixed.png');
 
+            expect(fs.readFileSync(input).toString()).toMatchSnapshot();
             await expect(input).toBeVisuallyEqualTo(expected);
         });
 

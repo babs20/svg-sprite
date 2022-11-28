@@ -1,7 +1,7 @@
 'use strict';
 
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 
 /**
  * Add a bunch of SVG files
@@ -12,13 +12,14 @@ const path = require('path');
  * @param {boolean}    resolvePaths Whether to resolve the paths of SVG files
  */
 function addFixtureFilesBase(spriter, files, cwd, resolvePaths) {
-    files.forEach(file => {
+    for (const file of files) {
+        const filePath = path.join(cwd, file);
         spriter.add(
-            resolvePaths ? path.resolve(path.join(cwd, file)) : file,
+            resolvePaths ? path.resolve(filePath) : file,
             file,
-            fs.readFileSync(path.join(cwd, file), 'utf8')
+            fs.readFileSync(filePath, 'utf8')
         );
-    });
+    }
 }
 
 /**

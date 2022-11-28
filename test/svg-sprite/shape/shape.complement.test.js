@@ -1,5 +1,8 @@
 'use strict';
 
+const { Buffer } = require('node:buffer');
+const File = require('vinyl');
+
 const TEST_SPRITER = {
     config: {
         shape: {
@@ -12,14 +15,16 @@ const TEST_SPRITER = {
     },
     verbose: jest.fn()
 };
-const TEST_FILE = {
-    contents: '<svg></svg>',
-    path: 'test_path',
-    relative: 'test_relative'
-};
+const TEST_FILE = new File({
+    contents: Buffer.from('<svg></svg>'),
+    path: '/test_base/test_path',
+    base: '/test_base/',
+    cwd: '/'
+});
 
 const SVGShape = require('../../../lib/svg-sprite/shape.js');
 const calculateSvgDimensions = require('../../../lib/svg-sprite/utils/calculate-svg-dimensions.js');
+const DimensionsCalculationError = require('../../../lib/svg-sprite/errors/dimensions-calculation-error.js');
 
 jest.mock('../../../lib/svg-sprite/utils/calculate-svg-dimensions');
 
@@ -115,11 +120,11 @@ describe('testing _determineDimensions()', () => {
         shape.height = 0;
 
         calculateSvgDimensions.mockImplementation(() => {
-            throw new Error(TEST_ERROR);
+            throw new DimensionsCalculationError(TEST_ERROR);
         });
         shape._determineDimensions(cb);
 
-        expect(cb).toHaveBeenCalledWith(new Error(TEST_ERROR));
+        expect(cb).toHaveBeenCalledWith(new DimensionsCalculationError(TEST_ERROR));
     });
 });
 

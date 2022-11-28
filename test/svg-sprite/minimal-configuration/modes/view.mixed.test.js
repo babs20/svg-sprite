@@ -1,7 +1,7 @@
 'use strict';
 
-const path = require('path');
-const fs = require('fs');
+const path = require('node:path');
+const fs = require('node:fs');
 const mustache = require('mustache');
 const glob = require('glob');
 const SVGSpriter = require('../../../../lib/svg-sprite.js');
@@ -60,6 +60,7 @@ describe('svg-sprite: with «view» mode, packed layout and LESS render type', (
         const input = path.join(tmpPath, 'view/svg', packedSvg);
         const expected = path.join(paths.expectations, 'png/css.packed.mixed.png');
 
+        expect(fs.readFileSync(input).toString()).toMatchSnapshot();
         await expect(input).toBeVisuallyEqualTo(expected);
     });
 
