@@ -157,9 +157,7 @@ describe('testing _initSVG()', () => {
         expect.hasAssertions();
 
         const TEST_FILE = new File({
-            contents: Buffer.from(
-                '<<ddfasdfasdf>>'
-            ),
+            contents: Buffer.from('<<ddfasdfasdf>>'),
 
             path: '/test_base/test_path',
             base: '/test_base/',

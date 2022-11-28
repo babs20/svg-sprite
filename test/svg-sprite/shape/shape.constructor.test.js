@@ -102,7 +102,9 @@ describe('testing Shape.constructor', () => {
                     };
                     const shape = new SVGShape(TEST_FILE_WITH_FOLDERS, TEST_SPRITER);
 
-                    expect(shape.config.id.generator(TEST_FILE_WITH_FOLDERS.relative, TEST_FILE_WITH_FOLDERS)).toBe('folder--test_path.f');
+                    expect(shape.config.id.generator(TEST_FILE_WITH_FOLDERS.relative, TEST_FILE_WITH_FOLDERS)).toBe(
+                        'folder--test_path.f'
+                    );
                 });
 
                 it('should set generator if provided generator is a string', () => {
